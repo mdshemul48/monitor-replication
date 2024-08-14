@@ -1,0 +1,19 @@
+{
+  "name": "replication-monitor",
+  "version": "1.0.0",
+  "description": "",
+  "main": "main.js",
+  "type": "module",
+  "scripts": {
+    "check": "node ./src/main.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "axios": "^1.7.3",
+    "dotenv": "^16.4.5",
+    "mysql2": "^3.11.0",
+    "ping": "^0.4.4"
+  }
+}
