@@ -1,6 +1,5 @@
-const mysql = require("mysql2/promise");
-
-class SlaveServer {
+import mysql from "mysql2/promise";
+export default class SlaveServer {
   constructor(user, password, host, database) {
     this.user = user;
     this.password = password;
@@ -18,6 +17,7 @@ class SlaveServer {
 
   async isReplicationRunning() {
     const [rows] = await this.connection.execute("SHOW SLAVE STATUS");
+    await this.close();
 
     if (rows.length > 0) {
       const status = rows[0];
@@ -28,6 +28,10 @@ class SlaveServer {
       return true;
     } else return false;
   }
-}
 
-export default SlaveServer;
+  async close() {
+    if (this.connection) {
+      await this.connection.end();
+    }
+  }
+}
