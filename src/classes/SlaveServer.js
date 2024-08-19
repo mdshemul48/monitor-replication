@@ -1,37 +1,73 @@
 import mysql from "mysql2/promise";
+
 export default class SlaveServer {
   constructor(user, password, host, database) {
     this.user = user;
     this.password = password;
     this.host = host;
     this.database = database;
+    this.connection = null;
   }
+
   async connect() {
-    this.connection = await mysql.createConnection({
-      user: this.user,
-      password: this.password,
-      host: this.host,
-      database: this.database,
-    });
+    try {
+      this.connection = await mysql.createConnection({
+        user: this.user,
+        password: this.password,
+        host: this.host,
+        database: this.database,
+      });
+    } catch (error) {
+      throw new Error(`Failed to connect to the database: ${error.message}`);
+    }
   }
 
   async isReplicationRunning() {
-    const [rows] = await this.connection.execute("SHOW SLAVE STATUS");
-    await this.close();
+    if (!this.connection) {
+      throw new Error(
+        "Database connection to the slave server has not been established."
+      );
+    }
 
-    if (rows.length > 0) {
-      const status = rows[0];
-      const ioRunning = status["Slave_IO_Running"];
-      const sqlRunning = status["Slave_SQL_Running"];
+    try {
+      const [rows] = await this.connection.execute("SHOW SLAVE STATUS");
 
-      if (ioRunning !== "Yes" || sqlRunning !== "Yes") return false;
-      return true;
-    } else return false;
+      if (rows.length > 0) {
+        const status = rows[0];
+        const ioRunning = status["Slave_IO_Running"];
+        const sqlRunning = status["Slave_SQL_Running"];
+
+        if (ioRunning !== "Yes") {
+          throw new Error(
+            "IO process is not running. Check the slave's IO thread."
+          );
+        } else if (sqlRunning !== "Yes") {
+          throw new Error(
+            "SQL process is not running. Check the slave's SQL thread."
+          );
+        }
+      } else {
+        throw new Error(
+          "No replication status information found. The slave server may not be configured properly."
+        );
+      }
+    } catch (error) {
+      throw new Error(`Failed to check replication status: ${error.message}`);
+    } finally {
+      await this.close(); // Ensure the connection is closed
+    }
   }
 
+  // Close the database connection
   async close() {
     if (this.connection) {
-      await this.connection.end();
+      try {
+        await this.connection.end();
+      } catch (error) {
+        throw new Error(
+          `Failed to close the database connection: ${error.message}`
+        );
+      }
     }
   }
 }
