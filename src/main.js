@@ -6,15 +6,28 @@ import sendMessageToGroup from "./helpers/telegramHandler.js";
 dotenv.config();
 
 async function main() {
-  const telegramBotToken = process.env.TELEGRAM_ACCESS_TOKEN;
-  const telegramGroupId = process.env.TELEGRAM_GROUP_ID;
+  const {
+    TELEGRAM_ACCESS_TOKEN: telegramBotToken,
+    TELEGRAM_GROUP_ID: telegramGroupId,
+    MASTER_HOST: masterHost,
+    SLAVE_HOST: slaveHost,
+    SLAVE_DB_USER: slaveUser,
+    SLAVE_DB_PASSWORD: slavePassword,
+    SLAVE_DB_DATABASE: slaveDatabase,
+  } = process.env;
 
-  const masterHost = process.env.MASTER_HOST;
-
-  const slaveHost = process.env.SLAVE_HOST;
-  const slaveUser = process.env.SLAVE_DB_USER;
-  const slavePassword = process.env.SLAVE_DB_PASSWORD;
-  const slaveDatabase = process.env.SLAVE_DB_DATABASE;
+  if (
+    !telegramBotToken ||
+    !telegramGroupId ||
+    !masterHost ||
+    !slaveHost ||
+    !slaveUser ||
+    !slavePassword ||
+    !slaveDatabase
+  ) {
+    console.error("Missing required environment variables.");
+    process.exit(1);
+  }
 
   try {
     if (!(await isReachable(masterHost))) {
@@ -38,7 +51,17 @@ async function main() {
 
     await slave.isReplicationRunning();
   } catch (error) {
-    await sendMessageToGroup(telegramBotToken, telegramGroupId, error.message);
+    try {
+      await sendMessageToGroup(
+        telegramBotToken,
+        telegramGroupId,
+        error.message
+      );
+    } catch (sendError) {
+      console.error(
+        `Failed to send message to Telegram group: ${sendError.message}`
+      );
+    }
   }
 }
 
