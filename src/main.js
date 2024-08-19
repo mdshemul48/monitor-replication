@@ -3,10 +3,11 @@ import YAML from "yaml";
 import fs from "fs";
 import { fileURLToPath } from "url";
 import { dirname, join } from "path";
-import SlaveServer from "./classes/SlaveServer.js";
+
 import sendMessageToGroup from "./helpers/telegramHandler.js";
-import { checkServerReachability } from "./helpers/reachable.js";
 import getCurrentDateTime from "./helpers/currentDateTime.js";
+import checkAndRunAfter12hour from "./helpers/checkAndRunTask.js";
+import replicationCheck from "./replicationCheck.js";
 
 dotenv.config();
 
@@ -23,47 +24,14 @@ function getConfigs() {
   return YAML.parse(configs);
 }
 
-async function replicationCheck(replicaConfig) {
-  const {
-    name,
-    credentials: {
-      master_host: masterHost,
-      slave_host: slaveHost,
-      slave_db_user: slaveUser,
-      slave_db_password: slavePassword,
-      slave_db_database: slaveDatabase,
-    },
-  } = replicaConfig;
-
-  try {
-    checkServerReachability(masterHost, "Master");
-    checkServerReachability(slaveHost, "Slave");
-
-    const slave = new SlaveServer(
-      slaveUser,
-      slavePassword,
-      slaveHost,
-      slaveDatabase
-    );
-
-    await slave.connect();
-
-    await slave.isReplicationRunning();
-  } catch (error) {
-    const message = `🚨⚠️REPLICA STOPPED⚠️🚨 
-Name: ${name}
-Master host: ${masterHost}
-Slave Host: ${slaveHost}
-----Error Message----
-${error.message}
-\n${getCurrentDateTime()}
-`;
-    await sendMessageToGroup(telegramBotToken, telegramGroupId, message);
-  }
-}
-
 async function main() {
   try {
+    checkAndRunAfter12hour(async () => {
+      const message = `*Script Running!*
+      \n${getCurrentDateTime()}`;
+      await sendMessageToGroup(telegramBotToken, telegramGroupId, message);
+    });
+
     const replicaConfigs = getConfigs();
 
     replicaConfigs.configs.forEach(replicationCheck);
