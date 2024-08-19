@@ -1,4 +1,4 @@
-import dotenv, { config } from "dotenv";
+import dotenv from "dotenv";
 import YAML from "yaml";
 import fs from "fs";
 import { fileURLToPath } from "url";
