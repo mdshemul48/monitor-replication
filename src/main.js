@@ -1,44 +1,43 @@
-import dotenv from "dotenv";
-import isReachable from "./helpers/reachable.js";
+import dotenv, { config } from "dotenv";
+import YAML from "yaml";
+import fs from "fs";
+import { fileURLToPath } from "url";
+import { dirname, join } from "path";
 import SlaveServer from "./classes/SlaveServer.js";
 import sendMessageToGroup from "./helpers/telegramHandler.js";
+import { checkServerReachability } from "./helpers/reachable.js";
+import getCurrentDateTime from "./helpers/currentDateTime.js";
 
 dotenv.config();
 
-async function main() {
-  const {
-    TELEGRAM_ACCESS_TOKEN: telegramBotToken,
-    TELEGRAM_GROUP_ID: telegramGroupId,
-    MASTER_HOST: masterHost,
-    SLAVE_HOST: slaveHost,
-    SLAVE_DB_USER: slaveUser,
-    SLAVE_DB_PASSWORD: slavePassword,
-    SLAVE_DB_DATABASE: slaveDatabase,
-  } = process.env;
+const {
+  TELEGRAM_ACCESS_TOKEN: telegramBotToken,
+  TELEGRAM_GROUP_ID: telegramGroupId,
+} = process.env;
 
-  if (
-    !telegramBotToken ||
-    !telegramGroupId ||
-    !masterHost ||
-    !slaveHost ||
-    !slaveUser ||
-    !slavePassword ||
-    !slaveDatabase
-  ) {
-    console.error("Missing required environment variables.");
-    process.exit(1);
-  }
+function getConfigs() {
+  const __filename = fileURLToPath(import.meta.url);
+  const __dirname = dirname(__filename);
+  const filePath = join(__dirname, "..", "config.yaml");
+  const configs = fs.readFileSync(filePath, "utf8");
+  return YAML.parse(configs);
+}
+
+async function replicationCheck(replicaConfig) {
+  const {
+    name,
+    credentials: {
+      master_host: masterHost,
+      slave_host: slaveHost,
+      slave_db_user: slaveUser,
+      slave_db_password: slavePassword,
+      slave_db_database: slaveDatabase,
+    },
+  } = replicaConfig;
 
   try {
-    if (!(await isReachable(masterHost))) {
-      throw new Error(
-        `Master server at ${masterHost} is unreachable. It might be offline or there could be a network issue.`
-      );
-    } else if (!(await isReachable(slaveHost))) {
-      throw new Error(
-        `Slave server at ${slaveHost} is unreachable. It might be offline or there could be a network issue.`
-      );
-    }
+    checkServerReachability(masterHost, "Master");
+    checkServerReachability(slaveHost, "Slave");
 
     const slave = new SlaveServer(
       slaveUser,
@@ -51,17 +50,29 @@ async function main() {
 
     await slave.isReplicationRunning();
   } catch (error) {
-    try {
-      await sendMessageToGroup(
-        telegramBotToken,
-        telegramGroupId,
-        error.message
-      );
-    } catch (sendError) {
-      console.error(
-        `Failed to send message to Telegram group: ${sendError.message}`
-      );
-    }
+    const message = `🚨⚠️REPLICA STOPPED⚠️🚨 
+Name: ${name}
+Master host: ${masterHost}
+Slave Host: ${slaveHost}
+----Error Message----
+${error.message}
+\n${getCurrentDateTime()}
+`;
+    await sendMessageToGroup(telegramBotToken, telegramGroupId, message);
+  }
+}
+
+async function main() {
+  try {
+    const replicaConfigs = getConfigs();
+
+    replicaConfigs.configs.forEach(replicationCheck);
+  } catch (error) {
+    const message = `SCRIPT ERROR!!!!!
+${error.message}
+\n${getCurrentDateTime()}
+    `;
+    await sendMessageToGroup(telegramBotToken, telegramGroupId, message);
   }
 }
 

@@ -1,0 +1,9 @@
+configs:
+  - name: Demo Name
+    credentials:
+      master_host: 192.168.0.222
+
+      slave_host: 192.168.0.123
+      slave_db_user: demo_user
+      slave_db_password: demo_password
+      slave_db_database: demo_db
