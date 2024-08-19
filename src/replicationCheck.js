@@ -1,5 +1,7 @@
-import { checkServerReachability } from "./helpers/reachable.js";
 import SlaveServer from "./classes/SlaveServer.js";
+import sendMessageToGroup from "./helpers/telegramHandler.js";
+import getCurrentDateTime from "./helpers/currentDateTime.js";
+import { checkServerReachability } from "./helpers/reachable.js";
 
 export default async function replicationCheck(replicaConfig) {
   const {
@@ -36,6 +38,6 @@ export default async function replicationCheck(replicaConfig) {
   ${error.message}
   \n${getCurrentDateTime()}
   `;
-    await sendMessageToGroup(telegramBotToken, telegramGroupId, message);
+    await sendMessageToGroup(message);
   }
 }

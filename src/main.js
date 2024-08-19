@@ -1,4 +1,3 @@
-import dotenv from "dotenv";
 import YAML from "yaml";
 import fs from "fs";
 import { fileURLToPath } from "url";
@@ -8,13 +7,6 @@ import sendMessageToGroup from "./helpers/telegramHandler.js";
 import getCurrentDateTime from "./helpers/currentDateTime.js";
 import checkAndRunAfter12hour from "./helpers/checkAndRunTask.js";
 import replicationCheck from "./replicationCheck.js";
-
-dotenv.config();
-
-const {
-  TELEGRAM_ACCESS_TOKEN: telegramBotToken,
-  TELEGRAM_GROUP_ID: telegramGroupId,
-} = process.env;
 
 function getConfigs() {
   const __filename = fileURLToPath(import.meta.url);
@@ -29,7 +21,7 @@ async function main() {
     checkAndRunAfter12hour(async () => {
       const message = `*Script Running!*
       \n${getCurrentDateTime()}`;
-      await sendMessageToGroup(telegramBotToken, telegramGroupId, message);
+      await sendMessageToGroup(message);
     });
 
     const replicaConfigs = getConfigs();
@@ -40,7 +32,7 @@ async function main() {
 ${error.message}
 \n${getCurrentDateTime()}
     `;
-    await sendMessageToGroup(telegramBotToken, telegramGroupId, message);
+    await sendMessageToGroup(message);
   }
 }
 
