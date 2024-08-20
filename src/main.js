@@ -7,6 +7,7 @@ import sendMessageToGroup from "./helpers/telegramHandler.js";
 import getCurrentDateTime from "./helpers/currentDateTime.js";
 import checkAndRunAfter12hour from "./helpers/checkAndRunTask.js";
 import replicationCheck from "./replicationCheck.js";
+import { reportHour } from "./helpers/environmentVariables.js";
 
 function getConfigs() {
   const __filename = fileURLToPath(import.meta.url);
@@ -18,7 +19,7 @@ function getConfigs() {
 
 async function main() {
   try {
-    checkAndRunAfter12hour(async () => {
+    checkAndRunAfter12hour(reportHour, async () => {
       const message = `*Script Running!*
       \n${getCurrentDateTime()}`;
       await sendMessageToGroup(message);

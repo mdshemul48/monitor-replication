@@ -7,7 +7,7 @@ const __dirname = dirname(__filename);
 
 const lastRunFilePath = join(__dirname, "../../temp", "lastRun.json");
 
-export default async function checkAndRunAfter12hour(performTask) {
+export default async function checkAndRunAfter12hour(hours, performTask) {
   try {
     const lastRunDir = dirname(lastRunFilePath);
     await fs.ensureDir(lastRunDir);
@@ -20,8 +20,8 @@ export default async function checkAndRunAfter12hour(performTask) {
 
     const currentTime = Date.now();
 
-    // Check if 12 hours (12 * 60 * 60 * 1000 milliseconds) have passed
-    const twelveHoursInMs = 12 * 60 * 60 * 1000;
+    // Check if hours (hour * 60 * 60 * 1000 milliseconds) have passed
+    const twelveHoursInMs = hours * 60 * 60 * 1000;
     if (currentTime - lastRunTime >= twelveHoursInMs) {
       await performTask();
 
