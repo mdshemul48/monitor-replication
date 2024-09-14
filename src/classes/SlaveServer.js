@@ -58,6 +58,29 @@ export default class SlaveServer {
     }
   }
 
+  async replicationInfo() {
+    const [rows] = await this.connection.execute("SHOW SLAVE STATUS");
+    await this.close();
+    if (rows.length > 0) {
+      const {
+        Slave_IO_Running,
+        Slave_SQL_Running,
+        Master_Log_File,
+        Read_Master_Log_Pos,
+        Relay_Log_File,
+        Relay_Log_Pos,
+      } = rows[0];
+      return {
+        Slave_IO_Running,
+        Slave_SQL_Running,
+        Master_Log_File,
+        Read_Master_Log_Pos,
+        Relay_Log_File,
+        Relay_Log_Pos,
+      };
+    }
+  }
+
   // Close the database connection
   async close() {
     if (this.connection) {

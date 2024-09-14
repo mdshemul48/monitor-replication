@@ -8,6 +8,7 @@ import getCurrentDateTime from "./helpers/currentDateTime.js";
 import checkAndRunAfter12hour from "./helpers/checkAndRunTask.js";
 import replicationCheck from "./replicationCheck.js";
 import { reportHour } from "./helpers/environmentVariables.js";
+import { reportMessage } from "./reportMessage.js";
 
 function getConfigs() {
   const __filename = fileURLToPath(import.meta.url);
@@ -19,13 +20,8 @@ function getConfigs() {
 
 async function main() {
   try {
-    checkAndRunAfter12hour(reportHour, async () => {
-      const message = `*Script Running!*
-      \n${getCurrentDateTime()}`;
-      await sendMessageToGroup(message);
-    });
-
     const replicaConfigs = getConfigs();
+    checkAndRunAfter12hour(reportHour, () => reportMessage(replicaConfigs));
 
     replicaConfigs.configs.forEach(replicationCheck);
   } catch (error) {
