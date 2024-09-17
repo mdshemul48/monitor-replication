@@ -21,7 +21,9 @@ function getConfigs() {
 async function main() {
   try {
     const replicaConfigs = getConfigs();
-    checkAndRunAfter12hour(reportHour, () => reportMessage(replicaConfigs));
+    checkAndRunAfter12hour(reportHour, () =>
+      reportMessage(replicaConfigs.configs)
+    );
 
     replicaConfigs.configs.forEach(replicationCheck);
   } catch (error) {
